@@ -6,45 +6,66 @@ const api = axios.create({
     headers: { "Content-Type": "application/json" },
 });
 
-// Tüm işlemler burada
 export const todoService = {
     // GET: Şu anda ne yapıyorum
     getCurrent: async () => {
-        const res = await api.get("/todos/current");
-        return res.data; // array
+        try {
+            const res = await api.get("/Todos/current");
+            return res.data;
+        } catch (error) {
+            // Konsola hata mesajını bas
+            console.error("API GET Current Hata (200 OK dönmemiş olabilir, 404/CORS?):", error.message);
+
+            // CRITICAL: Hata oluşsa bile boş dizi döndür. 
+            // Bu, useTodos'daki .map() çağrısının çökmesini engeller.
+            return [];
+        }
     },
 
     // GET: Ne yapacağım
     getNext: async () => {
-        const res = await api.get("/todos/next");
-        return res.data;
+        try {
+            const res = await api.get("/Todos/next");
+            return res.data;
+        } catch (error) {
+            console.error("API GET Next Hata (404/CORS?):", error.message);
+            // CRITICAL: Hata oluşsa bile boş dizi döndür.
+            return [];
+        }
     },
 
     // POST: Yeni "Şu anda ne yapıyorum" ekle
     addCurrent: async (text) => {
-        const res = await api.post("/todos/current", { text });
+        // YOL DÜZELTİLDİ
+        const res = await api.post("/Todos/current", { text });
         return res.data;
     },
 
     // POST: Yeni "Ne yapacağım" ekle
     addNext: async (text) => {
-        const res = await api.post("/todos/next", { text });
+        // YOL DÜZELTİLDİ
+        const res = await api.post("/Todos/next", { text });
         return res.data;
     },
 
-    // DELETE: "Şu anda ne yapıyorum" sil
+    // DELETE: Genel Silme
+    // Not: Backend'de tek bir DELETE /{id} var.
     deleteCurrent: async (id) => {
-        return api.delete(`/todos/current/${id}`);
+        // YOL DÜZELTİLDİ: /Todos/{id}
+        // Önceki versiyonda /todos/current/{id} idi, Backend'de bu yoktu.
+        return api.delete(`/Todos/${id}`);
     },
 
-    // DELETE: "Ne yapacağım" sil
+    // DELETE: Genel Silme
     deleteNext: async (id) => {
-        return api.delete(`/todos/next/${id}`);
+        // YOL DÜZELTİLDİ
+        return api.delete(`/Todos/${id}`);
     },
 
     // POST: "Ne yapacağım" -> "Şu anda ne yapıyorum" taşı
     moveToCurrent: async (id) => {
-        const res = await api.post(`/todos/move/${id}`);
+        // YOL DÜZELTİLDİ: /Todos/move/{id}
+        const res = await api.post(`/Todos/move/${id}`);
         return res.data;
     },
 };

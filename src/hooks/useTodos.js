@@ -1,71 +1,119 @@
-// src/hooks/useTodos.js
+// src/hooks/useTodos.js (API BAĞLANTILI VERSİYON)
 
-import { useEffect, useState } from "react";
-// todoService kalsın, ancak kullanmayacağız
+import { useEffect, useState, useCallback } from "react";
+// todoService'i artık gerçek çağrılar için kullanacağız
 import { todoService } from "../api/todoservice";
 
-const getHardcodedData = () => {
-    const baseTime = Date.now();
-    return [
-        { id: 1, task: "Frontend'i API olmadan gösteren çözümü uygula!", timestamp: baseTime },
-        { id: 2, task: "Gold teması ve buton animasyonlarını kontrol et.", timestamp: baseTime - 60000 },
-        { id: 3, task: "Piramit liste yapısının doğru çalıştığından emin ol.", timestamp: baseTime - 120000 },
-        { id: 4, task: "Daha sonra .NET API'yi kodlamaya başla.", timestamp: baseTime - 180000 },
-    ];
-};
+// NOT: getHardcodedData artık kullanılmayacak, kaldırılabilir.
+
 export function useTodos() {
+    // API'den gelen veriye uyum sağlamak için task yerine text kullanıyoruz, 
+    // ancak Frontend'deki TodoItem component'i 'item.task' beklediği için 
+    // dönen veriyi formatlayan bir fonksiyon kullanmak en iyisi.
+
+    // API'den gelen veriyi Frontend formatına dönüştürür (text -> task, createdAt -> timestamp)
+    const adaptData = (apiItem) => ({
+        id: apiItem.id,
+        task: apiItem.text,
+        timestamp: new Date(apiItem.createdAt).getTime(), // JS milisaniye formatına çevir
+        isCurrent: apiItem.isCurrent,
+    });
+
     const [currentTodos, setCurrentTodos] = useState([]);
     const [nextTodos, setNextTodos] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        let mounted = true;
-        setTimeout(() => {
-            if (!mounted) return;
+    // Tüm verileri API'den çeken ana fonksiyon
+    const fetchTodos = useCallback(async () => {
+        debugger;
+        setLoading(true);
+        try {
+            // İki listeyi paralel olarak çek
+            const [currentRes, nextRes] = await Promise.all([
+                todoService.getCurrent(),
+                todoService.getNext(),
+            ]);
 
-            // API yerine Hardcode veriyi yükle:
-            setCurrentTodos(getHardcodedData());
-            setNextTodos(getHardcodedData().map(t => ({ ...t, id: t.id + 10 })));
-
+            // Gelen veriyi Frontend'in beklediği formata dönüştürerek state'e at
+            setCurrentTodos(currentRes.map(adaptData));
+            setNextTodos(nextRes.map(adaptData));
+        } catch (error) {
+            console.error("API'den veri çekilirken hata oluştu:", error);
+            // Hata durumunda boş liste göster
+            setCurrentTodos([]);
+            setNextTodos([]);
+        } finally {
             setLoading(false);
-        }, 300);
-
-        return () => (mounted = false);
+        }
     }, []);
 
-    // 🎯 ADD FONKSİYONLARI (API yerine state'i güncelliyor)
+    // Component yüklendiğinde veriyi çek
+    useEffect(() => {
+        fetchTodos();
+    }, [fetchTodos]);
+
+
+    // --- CRUD FONKSİYONLARI (API CALLS) ---
+
     const addCurrent = async (text) => {
-        const newItem = { id: Date.now(), task: text, timestamp: Date.now() };
-        setCurrentTodos(prev => [newItem, ...prev].slice(0, 6));
+        try {
+            const newItem = await todoService.addCurrent(text);
+            // Sadece yeni eklenen öğeyi state'in başına ekleyip listeyi tekrar çekmekten kaçınıyoruz.
+            // Ancak, sadece yeni öğe eklenirse, API'nin limit (TOP 6) kuralını Frontend'de yönetmek zor.
+            // En güvenilir yol: Başarılı eklemeden sonra listeyi yeniden çekmek.
+            await fetchTodos();
+        } catch (error) {
+            console.error("Current Todo eklenirken hata:", error);
+        }
     };
+
     const addNext = async (text) => {
-        const newItem = { id: Date.now(), task: text, timestamp: Date.now() };
-        setNextTodos(prev => [newItem, ...prev].slice(0, 6));
-    };
-    // YENİ: Current listesinden silme
-    const deleteCurrent = (id) => {
-        setCurrentTodos(prev => prev.filter(item => item.id !== id));
-    };
-
-    // YENİ: Next listesinden silme
-    const deleteNext = (id) => {
-        setNextTodos(prev => prev.filter(item => item.id !== id));
+        try {
+            await todoService.addNext(text);
+            await fetchTodos();
+        } catch (error) {
+            console.error("Next Todo eklenirken hata:", error);
+        }
     };
 
-    // YENİ: Next listesinden Current listesine taşıma
-    const moveToCurrent = (itemToMove) => {
-        // 1. Current listesine en üste ekle (ve 6 ile sınırla)
-        setCurrentTodos(prev => [itemToMove, ...prev].slice(0, 6));
-        // 2. Next listesinden kaldır
-        setNextTodos(prev => prev.filter(item => item.id !== itemToMove.id));
+    const deleteCurrent = async (id) => {
+        try {
+            // Backend'in Delete çağrısı listeye özgü değildi (TodoController'da Delete/{id})
+            // Ancak frontend'de sadece id'yi siliyoruz.
+            await todoService.deleteCurrent(id); // todoService.js'teki metot çağrılıyor
+            // Başarılı silme sonrası listeyi yeniden çek
+            await fetchTodos();
+        } catch (error) {
+            console.error("Current Todo silinirken hata:", error);
+        }
     };
 
+    const deleteNext = async (id) => {
+        try {
+            await todoService.deleteNext(id); // todoService.js'teki metot çağrılıyor
+            await fetchTodos();
+        } catch (error) {
+            console.error("Next Todo silinirken hata:", error);
+        }
+    };
+
+    const moveToCurrent = async (itemToMove) => {
+        try {
+            // itemToMove.id'yi kullanarak API'ye taşıma çağrısı yap
+            const updatedItem = await todoService.moveToCurrent(itemToMove.id);
+            // Taşıma işlemi iki listeyi de etkilediğinden, en iyi yol listeleri yeniden çekmek
+            await fetchTodos();
+        } catch (error) {
+            console.error("Todo taşınırken hata:", error);
+        }
+    };
+
+    // return bloğu aynı kalır:
     return {
         currentTodos,
         nextTodos,
         addCurrent,
         addNext,
-        // Yeni fonksiyonları dışa aktar
         deleteCurrent,
         deleteNext,
         moveToCurrent,
