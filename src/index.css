@@ -18,6 +18,7 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
@@ -46,9 +47,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -59,10 +62,71 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* --- Tamamlandı Buton Renkleri --- */
+.btn-toggle {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 18px;
+  font-weight: 900;
+  margin-right: 10px;
+  transition: color 0.3s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.btn-toggle.completed {
+  color: var(--color-danger);
+  /* Kırmızı Çarpı */
+}
+
+.btn-toggle.not-completed {
+  color: var(--color-success);
+  /* Yeşil Tik */
+}
+
+/* --- Tamamlanma Animasyonu --- */
+
+/* Tamamlanmış öğenin arka planını koyulaştır */
+.todo.completed-fade {
+  background-color: var(--color-dark-2);
+  /* Daha koyu arka plan */
+  transition: background-color 0.5s ease;
+}
+
+/* Kayar Sınır Animasyonu */
+@keyframes border-flash {
+  0% {
+    border-color: rgba(0, 255, 0, 0);
+    border-width: 0;
+  }
+
+  50% {
+    border-color: var(--color-success);
+    border-width: 3px;
+  }
+
+  /* Yeşil vurgu */
+  100% {
+    border-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+  }
+
+  /* Animasyon bitince kaybolur */
+}
+
+.todo.flash-success {
+  animation: border-flash 1.2s ease-out;
+  border-style: solid;
+  /* Animasyon için border stili şart */
 }

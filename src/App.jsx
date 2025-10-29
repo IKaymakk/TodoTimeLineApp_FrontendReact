@@ -16,7 +16,8 @@ export default function App() {
     deleteCurrent,
     deleteNext,
     moveToCurrent,
-    loading
+    loading,
+    toggleCompleted
   } = useTodos();
 
   return (
@@ -33,18 +34,20 @@ export default function App() {
 
       {/* PİRAMİT SÜTUNLARI */}
       <div className="columns">
-        {/* Şu anda ne yapıyorum? (Sadece silme) */}
         <TodoColumn
           title="Şu anda ne yapıyorum?"
           todos={currentTodos}
+          // 🎯 onToggle'ı geçir
+          onToggle={toggleCompleted}
           onDelete={deleteCurrent}
         />
-        {/* Ne yapacağım? (Silme ve Taşıma) */}
         <TodoColumn
           title="Ne yapacağım?"
           todos={nextTodos}
-          onDelete={deleteNext}
+          // 🎯 onToggle'ı geçir
+          onToggle={toggleCompleted}
           onMove={moveToCurrent}
+          onDelete={deleteNext}
         />
       </div>
     </div>

@@ -27,6 +27,17 @@
     --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
     --btn-shadow-vibrant: 0 4px 18px rgba(0, 0, 0, 0.7);
     --btn-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.9);
+
+    --color-success: #10B981;
+    /* Net Yeşil */
+    --color-danger: #EF4444;
+    /* Kırmızı */
+    --color-dark-2: #2D3748;
+    /* Koyu Gri Arka Plan */
+    --color-primary: #f6ad55;
+    /* Turuncu/Altın */
+    --color-light: #f7fafc;
+    /* Açık Gri */
 }
 
 /* --- 1. RESET VE TEMEL STİLLER --- */
@@ -383,4 +394,91 @@ body {
     .columns {
         flex-direction: column;
     }
+}
+
+.btn-toggle {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 18px;
+    font-weight: 900;
+    margin-right: 10px;
+    transition: color 0.3s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+.btn-toggle.completed {
+    color: var(--color-danger);
+    /* Kırmızı Çarpı */
+}
+
+.btn-toggle.not-completed {
+    color: var(--color-success);
+    /* Yeşil Tik */
+}
+
+/* --- Tamamlanma Animasyonu --- */
+
+/* Tamamlanmış öğenin arka planını koyulaştır */
+.todo.completed-fade {
+    background-color: var(--color-dark-2);
+    transition: background-color 0.5s ease;
+}
+
+/* Kayar Sınır Animasyonu */
+@keyframes border-flash {
+    0% {
+        border-color: rgba(16, 185, 129, 0);
+        /* Başlangıçta şeffaf */
+        border-width: 0;
+    }
+
+    50% {
+        border-color: var(--color-success);
+        /* Yeşil Vurgu */
+        border-width: 3px;
+    }
+
+    100% {
+        border-color: rgba(16, 185, 129, 0);
+        /* Animasyon bitince kaybolur */
+        border-width: 0;
+    }
+}
+
+/* Tamamlanmış görevler için kalıcı stil */
+.todo.completed-style {
+    border: 2px solid var(--color-success) !important;
+    opacity: 0.7;
+}
+
+
+/* Kayar Sınır Animasyonu (Daha şatafatlı) */
+@keyframes border-flash {
+    0% {
+        box-shadow: 0 0 0 0px rgba(16, 185, 129, 0);
+        border-color: rgba(16, 185, 129, 0);
+        border-width: 0px;
+    }
+
+    50% {
+        box-shadow: 0 0 10px 5px rgba(16, 185, 129, 0.7);
+        /* Parlak Gölgelendirme */
+        border-color: var(--color-success);
+        border-width: 4px;
+        /* Daha kalın border */
+    }
+
+    100% {
+        box-shadow: 0 0 0 0px rgba(16, 185, 129, 0);
+        border-color: rgba(16, 185, 129, 0);
+        border-width: 0px;
+    }
+}
+
+.todo.flash-success {
+    animation: border-flash 1.5s ease-out;
+    /* Animasyon süresi 1.5 saniyeye çıkarıldı */
+    border-style: solid;
 }
