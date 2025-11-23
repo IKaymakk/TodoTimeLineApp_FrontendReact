@@ -1,22 +1,18 @@
-// src/hooks/useTodos.js (API BAĞLANTILI VERSİYON)
+
 
 import { useEffect, useState, useCallback } from "react";
-// todoService'i artık gerçek çağrılar için kullanacağız
 import { todoService } from "../api/todoservice";
 
-// NOT: getHardcodedData artık kullanılmayacak, kaldırılabilir.
 
 export function useTodos() {
-    // API'den gelen veriye uyum sağlamak için task yerine text kullanıyoruz, 
-    // ancak Frontend'deki TodoItem component'i 'item.task' beklediği için 
-    // dönen veriyi formatlayan bir fonksiyon kullanmak en iyisi.
 
-    // API'den gelen veriyi Frontend formatına döSnüştürür (text -> task, createdAt -> timestamp)
     const adaptData = (apiItem) => ({
         id: apiItem.id,
         task: apiItem.text,
-        timestamp: new Date(apiItem.createdAt).getTime(), // JS milisaniye formatına çevir
+        timestamp: new Date(apiItem.createdAt).getTime(),
         isCurrent: apiItem.isCurrent,
+        isCompleted: !!(apiItem.isCompleted ?? apiItem.IsCompleted),
+
     });
 
     const [currentTodos, setCurrentTodos] = useState([]);
@@ -47,7 +43,6 @@ export function useTodos() {
     }, [fetchTodos]);
 
 
-    // --- CRUD FONKSİYONLARI (API CALLS) ---
 
     const addCurrent = async (text) => {
         try {
@@ -103,6 +98,16 @@ export function useTodos() {
         }
     };
 
+    const updateText = async (id, newText) => {
+        try {
+            await todoService.updateText(id, newText);
+            await fetchTodos();
+        }
+        catch (error) {
+            console.error("Görev metni güncellenirken hata oluştu:", error);
+        }
+    }
+
     return {
         currentTodos,
         nextTodos,
@@ -112,6 +117,7 @@ export function useTodos() {
         deleteNext,
         moveToCurrent,
         loading,
-        toggleCompleted
+        toggleCompleted,
+        updateText
     };
 }

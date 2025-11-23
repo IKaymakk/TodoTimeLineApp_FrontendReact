@@ -51,4 +51,8 @@ export const todoService = {
     toggleCompleted: async (id) => {
         return api.put(`/Todos/status/${id}`);
     },
+    updateText: async (id, newText) => {
+        return api.put(`Todos/update/${id}`,
+            { text: newText });
+    }
 };

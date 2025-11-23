@@ -3,8 +3,7 @@
 import React from "react";
 import TodoItem from "./TodoItem";
 
-// Yeni prop'ları al: onDelete ve onMove
-export default function TodoColumn({ title, todos, onDelete, onMove, onToggle }) {
+export default function TodoColumn({ title, todos, onDelete, onMove, onToggle, onUpdate }) {
     return (
         <div className="column">
             {/* ... */}
@@ -18,8 +17,8 @@ export default function TodoColumn({ title, todos, onDelete, onMove, onToggle })
                         index={idx}
                         onDelete={() => onDelete(t.id)}
                         onMove={onMove ? () => onMove(t) : undefined}
-                        // 🎯 Yeni: Toggle Fonksiyonunu geçir
                         onToggle={onToggle}
+                        onUpdate={onUpdate}
                     />
                 ))}
             </div>
