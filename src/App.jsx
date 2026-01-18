@@ -15,7 +15,7 @@ export default function App() {
     moveToCurrent,
     loading,
     toggleCompleted,
-    updateText
+    updateTodoText
   } = useTodos();
 
   return (
@@ -34,7 +34,7 @@ export default function App() {
           todos={currentTodos}
           onToggle={toggleCompleted}
           onDelete={deleteCurrent}
-          onUpdate={updateText}
+          onUpdate={updateTodoText}
         />
         <TodoColumn
           title="Ne yapacağım?"
@@ -42,7 +42,7 @@ export default function App() {
           onToggle={toggleCompleted}
           onMove={moveToCurrent}
           onDelete={deleteNext}
-          onUpdate={updateText}
+          onUpdate={updateTodoText}
         />
       </div>
     </div>

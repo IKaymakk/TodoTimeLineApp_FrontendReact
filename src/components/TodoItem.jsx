@@ -1,3 +1,4 @@
+// src/components/TodoItem.jsx
 import React, { useState, useEffect, useRef } from "react";
 
 function widthPercentByIndex(idx) {
@@ -6,33 +7,36 @@ function widthPercentByIndex(idx) {
 }
 
 const getInitialCompletionStatus = (item) => {
-    const completionValue = item.isCompleted ?? item.IsCompleted ?? item.completed;
-    return !!completionValue;
+    // Güvenli okuma: Veri hangi isimle gelirse gelsin yakala
+    const val = item.isCompleted ?? item.IsCompleted ?? item.completed;
+    return !!val;
 };
 
-// 🎯 onUpdate prop'unu al
 export default function TodoItem({ item, index, onDelete, onMove, onToggle, onUpdate }) {
 
+    // --- Durum State'leri ---
     const [isAnimating, setIsAnimating] = useState(false);
     const [localIsCompleted, setLocalIsCompleted] = useState(getInitialCompletionStatus(item));
 
-    // --- Düzenleme State'leri ---
-    const [isEditing, setIsEditing] = useState(false); // Düzenleme modu açık mı?
-    const [editText, setEditText] = useState(item.Text || item.text || item.task); // Input içindeki metin
-    const inputRef = useRef(null); // Input'a otomatik odaklanmak için
+    // --- Edit Modu State'leri ---
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(item.Text || item.text || item.task);
+    const inputRef = useRef(null);
 
+    // Prop değiştiğinde local state'i güncelle
     useEffect(() => {
         setLocalIsCompleted(getInitialCompletionStatus(item));
-        // Dışarıdan veri güncellenirse edit text'i de güncelle (eğer o an edit yapmıyorsak)
         if (!isEditing) {
             setEditText(item.Text || item.text || item.task);
         }
     }, [item.isCompleted, item.IsCompleted, item.completed, item.Text, item.text, item.task, isEditing]);
 
-    // Düzenleme modu açıldığında input'a odaklan
+    // Edit modu açılınca input'a odaklan
     useEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus();
+            // İmleci metnin sonuna koy
+            inputRef.current.setSelectionRange(inputRef.current.value.length, inputRef.current.value.length);
         }
     }, [isEditing]);
 
@@ -51,8 +55,11 @@ export default function TodoItem({ item, index, onDelete, onMove, onToggle, onUp
         isAnimating ? 'flash-success' : '',
     ].join(' ').trim();
 
+    // --- Olay Yönetimi ---
+
     const handleToggle = async () => {
-        if (isAnimating || isEditing) return; // Edit yaparken toggle yapma
+        if (isAnimating || isEditing) return;
+
         const originalState = localIsCompleted;
         const newState = !originalState;
         setLocalIsCompleted(newState);
@@ -64,39 +71,47 @@ export default function TodoItem({ item, index, onDelete, onMove, onToggle, onUp
             console.error("Hata:", error);
             setLocalIsCompleted(originalState);
         } finally {
-            setTimeout(() => { setIsAnimating(false); }, 1200);
+            setTimeout(() => {
+                setIsAnimating(false);
+            }, 1200);
         }
     };
 
-    // --- Çift Tıklama İşleyicisi ---
     const handleDoubleClick = () => {
-        if (isCompleted) return; // Tamamlanmış görevleri düzenlemeye izin verme (isteğe bağlı)
+        if (isCompleted) return; // Tamamlananlar düzenlenmesin
         setIsEditing(true);
+        setEditText(item.Text || item.text || item.task);
     };
 
-    // --- Kaydetme İşlemi ---
     const handleSave = async () => {
-        // Boş metin kaydetme veya değişiklik yoksa kapat
-        if (!editText.trim() || editText === (item.Text || item.text || item.task)) {
+        const currentText = item.Text || item.text || item.task;
+        // Değişiklik yoksa veya boşsa kapat
+        if (!editText || !editText.trim() || editText === currentText) {
             setIsEditing(false);
             return;
         }
 
         try {
-            await onUpdate(item.id, editText); // API'ye güncelleme gönder
-            setIsEditing(false);
+            if (onUpdate) {
+                const success = await onUpdate(item.id, editText);
+                if (success) setIsEditing(false);
+            } else {
+                console.error("onUpdate fonksiyonu bulunamadı. Lütfen App.jsx ve TodoColumn.jsx dosyalarını kontrol edin.");
+                setIsEditing(false);
+            }
         } catch (error) {
-            console.error("Güncelleme hatası:", error);
-            // Hata durumunda eski metne dönebiliriz veya uyarı verebiliriz
+            console.error("Update hatası", error);
         }
     };
 
-    // --- Klavye Kontrolü (Enter: Kaydet, Esc: İptal) ---
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
+        // Ctrl + Enter ile kaydet
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             handleSave();
-        } else if (e.key === 'Escape') {
-            setEditText(item.Text || item.text || item.task); // Eski haline getir
+        }
+        // Sadece Enter yeni satır yapar (textarea varsayılanı)
+        else if (e.key === 'Escape') {
+            setEditText(item.Text || item.text || item.task);
             setIsEditing(false);
         }
     };
@@ -111,6 +126,7 @@ export default function TodoItem({ item, index, onDelete, onMove, onToggle, onUp
                 <button
                     className={`btn-toggle ${isCompleted ? 'completed' : 'not-completed'}`}
                     onClick={handleToggle}
+                    title={isCompleted ? "Tamamlanmadı Olarak İşaretle" : "Tamamlandı Olarak İşaretle"}
                     disabled={isAnimating}
                 >
                     {isCompleted ? '✖' : '✔'}
@@ -118,37 +134,40 @@ export default function TodoItem({ item, index, onDelete, onMove, onToggle, onUp
 
                 <div className="text-content" onDoubleClick={handleDoubleClick}>
                     {isEditing ? (
-                        // Düzenleme Modu: Input Göster
-                        <input
+                        // 🎯 DÜZENLENMİŞ MEMO TİPİ TEXTAREA
+                        <textarea
                             ref={inputRef}
-                            type="text"
                             value={editText}
                             onChange={(e) => setEditText(e.target.value)}
-                            onBlur={handleSave} // Odak kaybedilince kaydet
+                            onBlur={handleSave}
                             onKeyDown={handleKeyDown}
                             style={{
-                                width: '100%',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                border: '1px solid #555',
-                                background: '#222',
-                                color: '#fff',
-                                fontSize: '15px',
-                                outline: 'none'
+                                width: "100%",
+                                minHeight: "80px", // Memo havası için minimum yükseklik
+                                padding: "8px 10px",
+                                color: "#e0e0e0",
+                                background: "#252525",
+                                border: "1px solid #555",
+                                borderRadius: "4px",
+                                outline: "none",
+                                fontSize: "15px",
+                                fontFamily: "inherit",
+                                resize: "vertical", // Dikeyde boyutlandırılabilir
+                                lineHeight: "1.4"
                             }}
                         />
                     ) : (
-                        // Normal Mod: Metin Göster
+                        // Normal Metin Modu
                         <>
                             <div style={{
                                 fontSize: 15,
                                 fontWeight: 600,
                                 textDecoration: isCompleted ? 'line-through' : 'none',
                                 color: isCompleted ? '#A0AEC0' : 'inherit',
-                                cursor: 'text' // Metnin düzenlenebilir olduğunu hissettir
-                            }}>
-                                {item.Text || item.text || item.task}
-                            </div>
+                                cursor: 'text',
+                                whiteSpace: 'pre-wrap', // Satır sonlarını korur
+                                wordBreak: 'break-word'
+                            }}>{item.Text || item.text || item.task}</div>
                             <div className="meta">
                                 Eklendi: {isValidDate ? itemDate.toLocaleTimeString() : 'Bilinmiyor'}
                             </div>

@@ -98,15 +98,17 @@ export function useTodos() {
         }
     };
 
-    const updateText = async (id, newText) => {
+    const updateTodoText = async (id, newText) => {
         try {
             await todoService.updateText(id, newText);
             await fetchTodos();
+            return true;
         }
         catch (error) {
-            console.error("Görev metni güncellenirken hata oluştu:", error);
+            console.error("Hata : ", error);
+            return false;
         }
-    }
+    };
 
     return {
         currentTodos,
@@ -118,6 +120,6 @@ export function useTodos() {
         moveToCurrent,
         loading,
         toggleCompleted,
-        updateText
+        updateTodoText
     };
 }
